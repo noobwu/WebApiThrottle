@@ -1,4 +1,17 @@
-﻿using System;
+﻿// ***********************************************************************
+// Assembly         : WebApiThrottle.StrongName
+// Author           : Administrator
+// Created          : 2021-06-20
+//
+// Last Modified By : Administrator
+// Last Modified On : 2021-06-20
+// ***********************************************************************
+// <copyright file="ThrottlingCore.cs" company="stefanprodan.com">
+//     Copyright © Stefan Prodan 2016
+// </copyright>
+// <summary></summary>
+// ***********************************************************************
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -13,34 +26,80 @@ namespace WebApiThrottle
     /// </summary>
     internal class ThrottlingCore
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ThrottlingCore"/> class.
+        /// </summary>
         public ThrottlingCore()
         {
             IpAddressParser = new DefaultIpAddressParser();
         }
 
+        /// <summary>
+        /// The process locker
+        /// </summary>
         private static readonly object ProcessLocker = new object();
 
+        /// <summary>
+        /// Gets or sets the policy.
+        /// </summary>
+        /// <value>The policy.</value>
         internal ThrottlePolicy Policy { get; set; }
 
+        /// <summary>
+        /// Gets or sets the repository.
+        /// </summary>
+        /// <value>The repository.</value>
         internal IThrottleRepository Repository { get; set; }
 
+        /// <summary>
+        /// Gets or sets the ip address parser.
+        /// </summary>
+        /// <value>The ip address parser.</value>
         internal IIpAddressParser IpAddressParser { get; set; }
 
+        /// <summary>
+        /// Determines whether the specified ip rules contains ip.
+        /// </summary>
+        /// <param name="ipRules">The ip rules.</param>
+        /// <param name="clientIp">The client ip.</param>
+        /// <returns><c>true</c> if the specified ip rules contains ip; otherwise, <c>false</c>.</returns>
         internal bool ContainsIp(List<string> ipRules, string clientIp)
         {
             return IpAddressParser.ContainsIp(ipRules, clientIp);
         }
 
+        /// <summary>
+        /// Determines whether the specified ip rules contains ip.
+        /// </summary>
+        /// <param name="ipRules">The ip rules.</param>
+        /// <param name="clientIp">The client ip.</param>
+        /// <param name="rule">The rule.</param>
+        /// <returns><c>true</c> if the specified ip rules contains ip; otherwise, <c>false</c>.</returns>
         internal bool ContainsIp(List<string> ipRules, string clientIp, out string rule)
         {
             return IpAddressParser.ContainsIp(ipRules, clientIp, out rule);
         }
 
+        /// <summary>
+        /// Gets the client ip.
+        /// </summary>
+        /// <param name="request">The request.</param>
+        /// <returns>IPAddress.</returns>
         internal IPAddress GetClientIp(HttpRequestMessage request)
         {
             return IpAddressParser.GetClientIp(request);
         }
 
+        /// <summary>
+        /// Computes the log entry.
+        /// </summary>
+        /// <param name="requestId">The request identifier.</param>
+        /// <param name="identity">The identity.</param>
+        /// <param name="throttleCounter">The throttle counter.</param>
+        /// <param name="rateLimitPeriod">The rate limit period.</param>
+        /// <param name="rateLimit">The rate limit.</param>
+        /// <param name="request">The request.</param>
+        /// <returns>ThrottleLogEntry.</returns>
         internal ThrottleLogEntry ComputeLogEntry(string requestId, RequestIdentity identity, ThrottleCounter throttleCounter, string rateLimitPeriod, long rateLimit, HttpRequestMessage request)
         {
             return new ThrottleLogEntry
@@ -58,6 +117,12 @@ namespace WebApiThrottle
             };
         }
 
+        /// <summary>
+        /// Retries the after from.
+        /// </summary>
+        /// <param name="timestamp">The timestamp.</param>
+        /// <param name="period">The period.</param>
+        /// <returns>System.String.</returns>
         internal string RetryAfterFrom(DateTime timestamp, RateLimitPeriod period)
         {
             var secondsPast = Convert.ToInt32((DateTime.UtcNow - timestamp).TotalSeconds);
@@ -81,6 +146,11 @@ namespace WebApiThrottle
             return retryAfter.ToString(System.Globalization.CultureInfo.InvariantCulture);
         }
 
+        /// <summary>
+        /// Determines whether the specified request identity is whitelisted.
+        /// </summary>
+        /// <param name="requestIdentity">The request identity.</param>
+        /// <returns><c>true</c> if the specified request identity is whitelisted; otherwise, <c>false</c>.</returns>
         internal bool IsWhitelisted(RequestIdentity requestIdentity)
         {
             if (requestIdentity.ForceWhiteList)
@@ -116,6 +186,12 @@ namespace WebApiThrottle
             return false;
         }
 
+        /// <summary>
+        /// Computes the throttle key.
+        /// </summary>
+        /// <param name="requestIdentity">The request identity.</param>
+        /// <param name="period">The period.</param>
+        /// <returns>System.String.</returns>
         internal string ComputeThrottleKey(RequestIdentity requestIdentity, RateLimitPeriod period)
         {
             var keyValues = new List<string>()
@@ -154,6 +230,11 @@ namespace WebApiThrottle
             return hex;
         }
 
+        /// <summary>
+        /// Rateses the with defaults.
+        /// </summary>
+        /// <param name="defRates">The definition rates.</param>
+        /// <returns>List&lt;KeyValuePair&lt;RateLimitPeriod, System.Int64&gt;&gt;.</returns>
         internal List<KeyValuePair<RateLimitPeriod, long>> RatesWithDefaults(List<KeyValuePair<RateLimitPeriod, long>> defRates)
         {
             if (!defRates.Any(x => x.Key == RateLimitPeriod.Second))
@@ -184,6 +265,12 @@ namespace WebApiThrottle
             return defRates;
         }
 
+        /// <summary>
+        /// Processes the request.
+        /// </summary>
+        /// <param name="timeSpan">The time span.</param>
+        /// <param name="id">The identifier.</param>
+        /// <returns>ThrottleCounter.</returns>
         internal ThrottleCounter ProcessRequest(TimeSpan timeSpan, string id)
         {
             var throttleCounter = new ThrottleCounter()
@@ -220,6 +307,11 @@ namespace WebApiThrottle
             return throttleCounter;
         }
 
+        /// <summary>
+        /// Gets the time span from period.
+        /// </summary>
+        /// <param name="rateLimitPeriod">The rate limit period.</param>
+        /// <returns>TimeSpan.</returns>
         internal TimeSpan GetTimeSpanFromPeriod(RateLimitPeriod rateLimitPeriod)
         {
             var timeSpan = TimeSpan.FromSeconds(1);
@@ -246,6 +338,13 @@ namespace WebApiThrottle
             return timeSpan;
         }
 
+        /// <summary>
+        /// Applies the rules.
+        /// </summary>
+        /// <param name="identity">The identity.</param>
+        /// <param name="timeSpan">The time span.</param>
+        /// <param name="rateLimitPeriod">The rate limit period.</param>
+        /// <param name="rateLimit">The rate limit.</param>
         internal void ApplyRules(RequestIdentity identity, TimeSpan timeSpan, RateLimitPeriod rateLimitPeriod, ref long rateLimit)
         {
             // apply endpoint rate limits

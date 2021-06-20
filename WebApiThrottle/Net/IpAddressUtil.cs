@@ -1,3 +1,16 @@
+﻿// ***********************************************************************
+// Assembly         : WebApiThrottle.StrongName
+// Author           : Administrator
+// Created          : 2021-06-20
+//
+// Last Modified By : Administrator
+// Last Modified On : 2019-09-18
+// ***********************************************************************
+// <copyright file="IpAddressUtil.cs" company="stefanprodan.com">
+//     Copyright © Stefan Prodan 2016
+// </copyright>
+// <summary></summary>
+// ***********************************************************************
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -6,8 +19,17 @@ using System.Net;
 
 namespace WebApiThrottle.Net
 {
+    /// <summary>
+    /// Class IpAddressUtil.
+    /// </summary>
     public class IpAddressUtil
     {
+        /// <summary>
+        /// Determines whether the specified ip rules contains ip.
+        /// </summary>
+        /// <param name="ipRules">The ip rules.</param>
+        /// <param name="clientIp">The client ip.</param>
+        /// <returns><c>true</c> if the specified ip rules contains ip; otherwise, <c>false</c>.</returns>
         public static bool ContainsIp(List<string> ipRules, string clientIp)
         {
             var ip = ParseIp(clientIp);
@@ -26,6 +48,13 @@ namespace WebApiThrottle.Net
             return false;
         }
 
+        /// <summary>
+        /// Determines whether the specified ip rules contains ip.
+        /// </summary>
+        /// <param name="ipRules">The ip rules.</param>
+        /// <param name="clientIp">The client ip.</param>
+        /// <param name="rule">The rule.</param>
+        /// <returns><c>true</c> if the specified ip rules contains ip; otherwise, <c>false</c>.</returns>
         public static bool ContainsIp(List<string> ipRules, string clientIp, out string rule)
         {
             rule = null;
@@ -46,6 +75,11 @@ namespace WebApiThrottle.Net
             return false;
         }
 
+        /// <summary>
+        /// Parses the ip.
+        /// </summary>
+        /// <param name="ipAddress">The ip address.</param>
+        /// <returns>IPAddress.</returns>
         public static IPAddress ParseIp(string ipAddress)
         {
             ipAddress = ipAddress.Trim();
@@ -62,6 +96,11 @@ namespace WebApiThrottle.Net
             return IPAddress.Parse(ipAddress);
         }
 
+        /// <summary>
+        /// Determines whether [is private ip address] [the specified ip address].
+        /// </summary>
+        /// <param name="ipAddress">The ip address.</param>
+        /// <returns><c>true</c> if [is private ip address] [the specified ip address]; otherwise, <c>false</c>.</returns>
         public static bool IsPrivateIpAddress(string ipAddress)
         {
             // http://en.wikipedia.org/wiki/Private_network

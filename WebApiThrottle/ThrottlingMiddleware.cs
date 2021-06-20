@@ -1,4 +1,17 @@
-﻿using Microsoft.Owin;
+﻿// ***********************************************************************
+// Assembly         : WebApiThrottle.StrongName
+// Author           : Administrator
+// Created          : 2021-06-20
+//
+// Last Modified By : Administrator
+// Last Modified On : 2019-09-18
+// ***********************************************************************
+// <copyright file="ThrottlingMiddleware.cs" company="stefanprodan.com">
+//     Copyright © Stefan Prodan 2016
+// </copyright>
+// <summary></summary>
+// ***********************************************************************
+using Microsoft.Owin;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,17 +23,32 @@ using WebApiThrottle.Net;
 
 namespace WebApiThrottle
 {
+    /// <summary>
+    /// Class ThrottlingMiddleware.
+    /// Implements the <see cref="Microsoft.Owin.OwinMiddleware" />
+    /// </summary>
+    /// <seealso cref="Microsoft.Owin.OwinMiddleware" />
     public class ThrottlingMiddleware : OwinMiddleware
     {
+        /// <summary>
+        /// The core
+        /// </summary>
         private ThrottlingCore core;
+        /// <summary>
+        /// The policy repository
+        /// </summary>
         private IPolicyRepository policyRepository;
+        /// <summary>
+        /// The policy
+        /// </summary>
         private ThrottlePolicy policy;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ThrottlingMiddleware"/> class. 
-        /// By default, the <see cref="QuotaExceededResponseCode"/> property 
+        /// Initializes a new instance of the <see cref="ThrottlingMiddleware" /> class.
+        /// By default, the <see cref="QuotaExceededResponseCode" /> property
         /// is set to 429 (Too Many Requests).
         /// </summary>
+        /// <param name="next">The next.</param>
         public ThrottlingMiddleware(OwinMiddleware next)
             : base(next)
         {
@@ -30,25 +58,16 @@ namespace WebApiThrottle
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ThrottlingMiddleware"/> class.
-        /// Persists the policy object in cache using <see cref="IPolicyRepository"/> implementation.
-        /// The policy object can be updated by <see cref="ThrottleManager"/> at runtime. 
+        /// Initializes a new instance of the <see cref="ThrottlingMiddleware" /> class.
+        /// Persists the policy object in cache using <see cref="IPolicyRepository" /> implementation.
+        /// The policy object can be updated by <see cref="ThrottleManager" /> at runtime.
         /// </summary>
-        /// <param name="policy">
-        /// The policy.
-        /// </param>
-        /// <param name="policyRepository">
-        /// The policy repository.
-        /// </param>
-        /// <param name="repository">
-        /// The repository.
-        /// </param>
-        /// <param name="logger">
-        /// The logger.
-        /// </param>
-        /// <param name="ipAddressParser">
-        /// The IpAddressParser
-        /// </param>
+        /// <param name="next">The next.</param>
+        /// <param name="policy">The policy.</param>
+        /// <param name="policyRepository">The policy repository.</param>
+        /// <param name="repository">The repository.</param>
+        /// <param name="logger">The logger.</param>
+        /// <param name="ipAddressParser">The IpAddressParser</param>
         public ThrottlingMiddleware(OwinMiddleware next, 
             ThrottlePolicy policy, 
             IPolicyRepository policyRepository, 
@@ -79,8 +98,9 @@ namespace WebApiThrottle
         }
 
         /// <summary>
-        ///  Gets or sets the throttling rate limits policy repository
+        /// Gets or sets the throttling rate limits policy repository
         /// </summary>
+        /// <value>The policy repository.</value>
         public IPolicyRepository PolicyRepository
         {
             get { return policyRepository; }
@@ -90,6 +110,7 @@ namespace WebApiThrottle
         /// <summary>
         /// Gets or sets the throttling rate limits policy
         /// </summary>
+        /// <value>The policy.</value>
         public ThrottlePolicy Policy
         {
             get { return policy; }
@@ -99,27 +120,36 @@ namespace WebApiThrottle
         /// <summary>
         /// Gets or sets the throttle metrics storage
         /// </summary>
+        /// <value>The repository.</value>
         public IThrottleRepository Repository { get; set; }
 
         /// <summary>
-        /// Gets or sets an instance of <see cref="IThrottleLogger"/> that logs traffic and blocked requests
+        /// Gets or sets an instance of <see cref="IThrottleLogger" /> that logs traffic and blocked requests
         /// </summary>
+        /// <value>The logger.</value>
         public IThrottleLogger Logger { get; set; }
 
         /// <summary>
         /// Gets or sets a value that will be used as a formatter for the QuotaExceeded response message.
-        /// If none specified the default will be: 
+        /// If none specified the default will be:
         /// API calls quota exceeded! maximum admitted {0} per {1}
         /// </summary>
+        /// <value>The quota exceeded message.</value>
         public string QuotaExceededMessage { get; set; }
 
         /// <summary>
-        /// Gets or sets the value to return as the HTTP status 
+        /// Gets or sets the value to return as the HTTP status
         /// code when a request is rejected because of the
         /// throttling policy. The default value is 429 (Too Many Requests).
         /// </summary>
+        /// <value>The quota exceeded response code.</value>
         public HttpStatusCode QuotaExceededResponseCode { get; set; }
 
+        /// <summary>
+        /// Process an individual request.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <returns>Task.</returns>
         public override async Task Invoke(IOwinContext context)
         {
             var response = context.Response;
@@ -213,6 +243,11 @@ namespace WebApiThrottle
             await Next.Invoke(context);
         }
 
+        /// <summary>
+        /// Sets the identity.
+        /// </summary>
+        /// <param name="request">The request.</param>
+        /// <returns>RequestIdentity.</returns>
         protected virtual RequestIdentity SetIdentity(IOwinRequest request)
         {
             var entry = new RequestIdentity();
@@ -225,6 +260,12 @@ namespace WebApiThrottle
             return entry;
         }
 
+        /// <summary>
+        /// Computes the throttle key.
+        /// </summary>
+        /// <param name="requestIdentity">The request identity.</param>
+        /// <param name="period">The period.</param>
+        /// <returns>System.String.</returns>
         protected virtual string ComputeThrottleKey(RequestIdentity requestIdentity, RateLimitPeriod period)
         {
             return core.ComputeThrottleKey(requestIdentity, period);

@@ -1,4 +1,17 @@
-﻿using System;
+﻿// ***********************************************************************
+// Assembly         : WebApiThrottle.StrongName
+// Author           : Administrator
+// Created          : 2021-06-20
+//
+// Last Modified By : Administrator
+// Last Modified On : 2019-09-18
+// ***********************************************************************
+// <copyright file="ThrottlePolicy.cs" company="stefanprodan.com">
+//     Copyright © Stefan Prodan 2016
+// </copyright>
+// <summary></summary>
+// ***********************************************************************
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,6 +25,9 @@ namespace WebApiThrottle
     [Serializable]
     public class ThrottlePolicy
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ThrottlePolicy"/> class.
+        /// </summary>
         public ThrottlePolicy()
         {
             IpWhitelist = new List<string>();
@@ -26,6 +42,11 @@ namespace WebApiThrottle
         /// <summary>
         /// Configure default request limits per second, minute, hour or day
         /// </summary>
+        /// <param name="perSecond">The per second.</param>
+        /// <param name="perMinute">The per minute.</param>
+        /// <param name="perHour">The per hour.</param>
+        /// <param name="perDay">The per day.</param>
+        /// <param name="perWeek">The per week.</param>
         public ThrottlePolicy(long? perSecond = null, long? perMinute = null, long? perHour = null, long? perDay = null, long? perWeek = null)
             : this()
         {
@@ -60,37 +81,74 @@ namespace WebApiThrottle
         /// <summary>
         /// Gets or sets a value indicating whether IP throttling is enabled.
         /// </summary>
+        /// <value><c>true</c> if [ip throttling]; otherwise, <c>false</c>.</value>
         public bool IpThrottling { get; set; }
 
+        /// <summary>
+        /// Gets or sets the ip whitelist.
+        /// </summary>
+        /// <value>The ip whitelist.</value>
         public List<string> IpWhitelist { get; set; }
 
+        /// <summary>
+        /// Gets or sets the ip rules.
+        /// </summary>
+        /// <value>The ip rules.</value>
         public IDictionary<string, RateLimits> IpRules { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether client key throttling is enabled.
         /// </summary>
+        /// <value><c>true</c> if [client throttling]; otherwise, <c>false</c>.</value>
         public bool ClientThrottling { get; set; }
 
+        /// <summary>
+        /// Gets or sets the client whitelist.
+        /// </summary>
+        /// <value>The client whitelist.</value>
         public List<string> ClientWhitelist { get; set; }
 
+        /// <summary>
+        /// Gets or sets the client rules.
+        /// </summary>
+        /// <value>The client rules.</value>
         public IDictionary<string, RateLimits> ClientRules { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether route throttling is enabled
         /// </summary>
+        /// <value><c>true</c> if [endpoint throttling]; otherwise, <c>false</c>.</value>
         public bool EndpointThrottling { get; set; }
 
+        /// <summary>
+        /// Gets or sets the endpoint whitelist.
+        /// </summary>
+        /// <value>The endpoint whitelist.</value>
         public List<string> EndpointWhitelist { get; set; }
 
+        /// <summary>
+        /// Gets or sets the endpoint rules.
+        /// </summary>
+        /// <value>The endpoint rules.</value>
         public IDictionary<string, RateLimits> EndpointRules { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether all requests, including the rejected ones, should be stacked in this order: day, hour, min, sec
         /// </summary>
+        /// <value><c>true</c> if [stack blocked requests]; otherwise, <c>false</c>.</value>
         public bool StackBlockedRequests { get; set; }
 
+        /// <summary>
+        /// Gets or sets the rates.
+        /// </summary>
+        /// <value>The rates.</value>
         public Dictionary<RateLimitPeriod, long> Rates { get; set; }
 
+        /// <summary>
+        /// Froms the store.
+        /// </summary>
+        /// <param name="provider">The provider.</param>
+        /// <returns>ThrottlePolicy.</returns>
         public static ThrottlePolicy FromStore(IThrottlePolicyProvider provider)
         {
             var settings = provider.ReadSettings();
