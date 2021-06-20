@@ -32,8 +32,13 @@ namespace WebApiThrottle.WebApiDemo
             config.Services.Replace(typeof(ITraceWriter), traceWriter);
             config.EnableSystemDiagnosticsTracing();
 
+            var muxer = GetConnectionMultiplexer("127.0.0.1:6379,password=,connectRetry=3,connectTimeout=15000,syncTimeout=15000,defaultDatabase=0,abortConnect=false");
             //IThrottleRepository throttleRepository = new CacheRepository();
-            IThrottleRepository throttleRepository = new RedisRepository(GetConnectionMultiplexer("127.0.0.1:6379,password=,connectRetry=3,connectTimeout=15000,syncTimeout=15000,defaultDatabase=0,abortConnect=false"));
+            IThrottleRepository throttleRepository = new RedisRepository(muxer);
+
+            //IPolicyRepository policyRepository = new PolicyCacheRepository();
+            IPolicyRepository policyRepository = new PolicyRedisRepository(muxer);
+
             //Web API throttling handler
             config.MessageHandlers.Add(new ThrottlingHandler(
                 policy: new ThrottlePolicy(perMinute: 20, perHour: 30, perDay: 35, perWeek: 3000)
@@ -65,7 +70,7 @@ namespace WebApiThrottle.WebApiDemo
                         { "api/search", new RateLimits { PerSecond = 10, PerMinute = 100, PerHour = 1000 } }
                     }
                 },
-                policyRepository: new PolicyCacheRepository(),
+                policyRepository: policyRepository,
                 repository: throttleRepository,
                 logger: new TracingThrottleLogger(traceWriter),
                 ipAddressParser: new CustomIpAddressParser()));

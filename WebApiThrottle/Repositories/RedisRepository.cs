@@ -22,7 +22,7 @@ namespace WebApiThrottle
     /// Implements the <see cref="WebApiThrottle.IThrottleRepository" />
     /// </summary>
     /// <seealso cref="WebApiThrottle.IThrottleRepository" />
-    public class RedisRepository : IThrottleRepository
+    public class RedisRepository : RedisRespositoryBase, IThrottleRepository
     {
         /// <summary>
         /// The atomic increment
@@ -33,21 +33,13 @@ namespace WebApiThrottle
         /// The wild card keys
         /// </summary>
         private readonly LuaScript _wildCardKeys = LuaScript.Prepare(" local res = redis.call(\"KEYS\",@keys) return res ");
-        /// <summary>
-        /// The database index
-        /// </summary>
-        private readonly int _dbIndex = 0;
-        /// <summary>
-        /// The connection multiplexer
-        /// </summary>
-        private readonly IConnectionMultiplexer _connectionMultiplexer;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="RedisRepository"/> class.
         /// </summary>
         /// <param name="connectionMultiplexer">The connection multiplexer.</param>
-        public RedisRepository(IConnectionMultiplexer connectionMultiplexer)
+        public RedisRepository(IConnectionMultiplexer connectionMultiplexer):base(connectionMultiplexer)
         {
-            _connectionMultiplexer = connectionMultiplexer ?? throw new ArgumentException("IConnectionMultiplexer was null. Ensure StackExchange.Redis was successfully registered");
         }
         /// <summary>
         /// Anies the specified identifier.
@@ -104,7 +96,7 @@ namespace WebApiThrottle
         /// <exception cref="NotImplementedException"></exception>
         public void Save(string id, ThrottleCounter throttleCounter, TimeSpan expirationTime)
         {
-            var result = GetDatabase().ScriptEvaluate(_atomicIncrement, new { key = GetKey(id), timeout = expirationTime.TotalSeconds, delta = throttleCounter.TotalRequests });
+            GetDatabase().ScriptEvaluate(_atomicIncrement, new { key = GetKey(id), timeout = expirationTime.TotalSeconds, delta = throttleCounter.TotalRequests });
         }
 
         /// <summary>
@@ -112,45 +104,9 @@ namespace WebApiThrottle
         /// </summary>
         /// <param name="id">The identifier.</param>
         /// <returns>System.String.</returns>
-        private string GetKey(string id)
+        protected override string GetKey(string id)
         {
-            return $"WebApiThrottle:{id}";
+            return $"WebApiThrottle:Counter:{id}";
         }
-
-        /// <summary>
-        /// Gets the specified key.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="key">The key.</param>
-        /// <returns>T.</returns>
-        private T Get<T>(string key)
-        {
-            if (key == null) throw new ArgumentNullException(nameof(key));
-            RedisValue value = RedisValue.Null;
-            try
-            {
-                var database = GetDatabase();
-                value = database.StringGet(key);
-                if (value.IsNull)
-                {
-                    return default(T);
-                }
-                return JsonConvert.DeserializeObject<T>(value);
-            }
-            catch
-            {
-                return default(T);
-            }
-        }
-
-        /// <summary>
-        /// Gets the database.
-        /// </summary>
-        /// <returns>StackExchange.Redis.IDatabase.</returns>
-        public IDatabase GetDatabase()
-        {
-            return _connectionMultiplexer.GetDatabase(_dbIndex);
-        }
-
     }
 }

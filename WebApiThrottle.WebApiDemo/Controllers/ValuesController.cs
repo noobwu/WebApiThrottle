@@ -1,4 +1,17 @@
-﻿using System;
+﻿// ***********************************************************************
+// Assembly         : WebApiThrottle.WebApiDemo
+// Author           : Administrator
+// Created          : 2021-06-20
+//
+// Last Modified By : Administrator
+// Last Modified On : 2021-06-20
+// ***********************************************************************
+// <copyright file="ValuesController.cs" company="">
+//     Copyright ©  2016
+// </copyright>
+// <summary></summary>
+// ***********************************************************************
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -7,14 +20,28 @@ using System.Web.Http;
 
 namespace WebApiThrottle.WebApiDemo.Controllers
 {
+    /// <summary>
+    /// Class ValuesController.
+    /// Implements the <see cref="System.Web.Http.ApiController" />
+    /// </summary>
+    /// <seealso cref="System.Web.Http.ApiController" />
     public class ValuesController : ApiController
     {
+        /// <summary>
+        /// Gets this instance.
+        /// </summary>
+        /// <returns>IEnumerable&lt;System.String&gt;.</returns>
         [EnableThrottling(PerSecond = 2)]
         public IEnumerable<string> Get()
         {
             return new string[] { "value1", "value2" };
         }
 
+        /// <summary>
+        /// Gets the specified identifier.
+        /// </summary>
+        /// <param name="id">The identifier.</param>
+        /// <returns>System.String.</returns>
         [DisableThrotting]
         public string Get(int id)
         {
