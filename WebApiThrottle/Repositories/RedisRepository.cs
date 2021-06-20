@@ -104,7 +104,7 @@ namespace WebApiThrottle
         /// <exception cref="NotImplementedException"></exception>
         public void Save(string id, ThrottleCounter throttleCounter, TimeSpan expirationTime)
         {
-            GetDatabase().ScriptEvaluate(_atomicIncrement, new { key = GetKey(id), timeout = expirationTime.TotalSeconds, delta = throttleCounter.TotalRequests });
+            var result = GetDatabase().ScriptEvaluate(_atomicIncrement, new { key = GetKey(id), timeout = expirationTime.TotalSeconds, delta = throttleCounter.TotalRequests });
         }
 
         /// <summary>

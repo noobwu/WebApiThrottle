@@ -20,7 +20,36 @@ namespace WebApiThrottle.WebApiDemo.Controllers
         {
             return "value";
         }
+        // POST api/values
+        /// <summary>
+        /// Posts the specified value.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        [HttpPost]
+        public void Post([FromBody] string value)
+        {
+        }
 
+        // PUT api/values/5
+        /// <summary>
+        /// Puts the specified identifier.
+        /// </summary>
+        /// <param name="id">The identifier.</param>
+        /// <param name="value">The value.</param>
+        [HttpPut]
+        public void Put(int id, [FromBody] string value)
+        {
+        }
+
+        // DELETE api/values/5
+        /// <summary>
+        /// Deletes the specified identifier.
+        /// </summary>
+        /// <param name="id">The identifier.</param>
+        [HttpDelete]
+        public void Delete(int id)
+        {
+        }
         /// <summary>
         /// Policy runtime update example
         /// </summary>
