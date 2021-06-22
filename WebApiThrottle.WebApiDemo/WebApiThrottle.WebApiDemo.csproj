@@ -92,7 +92,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App_Start\WebApiConfig.cs" />
-    <Compile Include="Controllers\ClientRateLimitController.cs" />
+    <Compile Include="Controllers\ApiControllerBase.cs" />
+    <Compile Include="Controllers\ThrottleController.cs" />
     <Compile Include="Controllers\ValuesController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -100,11 +101,22 @@
     <Compile Include="Helpers\CustomThrottleLogger.cs" />
     <Compile Include="Helpers\CustomThrottlingFilter.cs" />
     <Compile Include="Helpers\CustomThrottlingHandler.cs" />
+    <Compile Include="Helpers\RedisCacheClient.cs" />
+    <Compile Include="Infrastructure\Singleton.cs" />
+    <Compile Include="Models\KmmResult.cs" />
+    <Compile Include="Models\ThrottlePolicyModel.cs" />
     <Compile Include="Net\CustomIpAddressParser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <Content Include="Scripts\DequeueId.lua" />
+    <Content Include="Scripts\IncrementWithExpire.lua" />
+    <Content Include="Scripts\RemoveByPrefix.lua" />
+    <Content Include="Scripts\RemoveIfEqual.lua" />
+    <Content Include="Scripts\ReplaceIfEqual.lua" />
+    <Content Include="Scripts\SetIfHigher.lua" />
+    <Content Include="Scripts\SetIfLower.lua" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
