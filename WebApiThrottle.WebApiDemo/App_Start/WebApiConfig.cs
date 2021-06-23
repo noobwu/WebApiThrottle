@@ -1,12 +1,17 @@
-﻿using StackExchange.Redis;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Tracing;
+using WebApiThrottle.WebApiDemo.Extensions;
+using WebApiThrottle.WebApiDemo.Infrastructure;
 using WebApiThrottle.WebApiDemo.Net;
 
 namespace WebApiThrottle.WebApiDemo
@@ -24,6 +29,22 @@ namespace WebApiThrottle.WebApiDemo
                 defaults: new { id = RouteParameter.Optional }
             );
 
+            // 将 SerializerSettings 重置为默认值 IgnoreSerializableAttribute = true
+            config.Formatters.JsonFormatter.SerializerSettings = new JsonSerializerSettings()
+            {
+                MissingMemberHandling = MissingMemberHandling.Ignore,
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                Converters = { new IsoDateTimeConverter { DateTimeFormat = "yyyy-MM-dd HH:mm:ss" } }
+            }; ;
+            UsingThrottle(config);
+
+        }
+        /// <summary>
+        /// Usings the throttle.
+        /// </summary>
+        /// <param name="config">The configuration.</param>
+        private static void UsingThrottle(HttpConfiguration config)
+        {
             //trace provider
             var traceWriter = new SystemDiagnosticsTraceWriter()
             {
@@ -33,94 +54,67 @@ namespace WebApiThrottle.WebApiDemo
             config.EnableSystemDiagnosticsTracing();
 
             var muxer = GetConnectionMultiplexer("127.0.0.1:6379,password=,connectRetry=3,connectTimeout=15000,syncTimeout=15000,defaultDatabase=0,abortConnect=false");
-            //IThrottleRepository throttleRepository = new CacheRepository();
-            IThrottleRepository throttleRepository = new RedisRepository(muxer);
+            Singleton<IThrottleRepository>.Instance = new RedisRepository(muxer);
 
-            //IPolicyRepository policyRepository = new PolicyCacheRepository();
-            IPolicyRepository policyRepository = new PolicyRedisRepository(muxer);
+            var policyRepository = new PolicyRedisRepository(muxer);
+            Singleton<IPolicyRepository>.Instance = policyRepository;
+            Singleton<ThrottlePolicy>.Instance = GetThrottlePolicy(policyRepository);
 
-            //Web API throttling handler
-            config.MessageHandlers.Add(new ThrottlingHandler(
-                policy: new ThrottlePolicy(perMinute: 20, perHour: 30, perDay: 35, perWeek: 3000)
-                {
-                    //scope to IPs
-                    IpThrottling = true,
-                    IpRules = new Dictionary<string, RateLimits>
-                    {
-                        { "::1/10", new RateLimits { PerSecond = 2 } },
-                        { "192.168.2.1", new RateLimits { PerMinute = 30, PerHour = 30*60, PerDay = 30*60*24 } }
-                    },
-                    //white list the "::1" IP to disable throttling on localhost for Win8
-                    //IpWhitelist = new List<string> { "127.0.0.1", "192.168.0.0/24" },
-
-                    //scope to clients (if IP throttling is applied then the scope becomes a combination of IP and client key)
-                    ClientThrottling = true,
-                    ClientRules = new Dictionary<string, RateLimits>
-                    {
-                        { "api-client-key-1", new RateLimits { PerMinute = 60, PerHour = 600 } },
-                        { "api-client-key-9", new RateLimits { PerDay = 5000 } }
-                    },
-                    //white list API keys that don’t require throttling
-                    ClientWhitelist = new List<string> { "admin-key" },
-
-                    //scope to endpoints
-                    EndpointThrottling = true,
-                    EndpointRules = new Dictionary<string, RateLimits>
-                    {
-                        { "api/search", new RateLimits { PerSecond = 10, PerMinute = 100, PerHour = 1000 } }
-                    }
-                },
-                policyRepository: policyRepository,
-                repository: throttleRepository,
-                logger: new TracingThrottleLogger(traceWriter),
-                ipAddressParser: new CustomIpAddressParser()));
+           
+            config.Services.Replace(typeof(ITraceWriter), traceWriter);
+            config.EnableSystemDiagnosticsTracing();
+            IThrottleLogger logger = new TracingThrottleLogger(traceWriter);
 
             //Web API throttling handler load policy from web.config
-            //config.MessageHandlers.Add(new ThrottlingHandler(
-            //    policy: ThrottlePolicy.FromStore(new PolicyConfigurationProvider()),
-            //    policyRepository: new PolicyCacheRepository(),
-            //    repository: new CacheRepository(),
-            //    logger: new TracingThrottleLogger(traceWriter)));
+            config.MessageHandlers.Add(new ThrottlingHandler(
+                policy: Singleton<ThrottlePolicy>.Instance,
+                policyRepository: Singleton<IPolicyRepository>.Instance,
+                repository: Singleton<IThrottleRepository>.Instance,
+                logger: logger
+                )
+            {
+                QuotaExceededContent = (rateLimit, period) => QuotaExceededContent(rateLimit, period),
+                QuotaExceededResponseCode = HttpStatusCode.OK
+            });
 
-            //Web API throttling filter
-            //config.Filters.Add(new ThrottlingFilter(
-            //    policy: new ThrottlePolicy(perMinute: 20, perHour: 30, perDay: 35, perWeek: 3000)
-            //    {
-            //        //scope to IPs
-            //        IpThrottling = true,
-            //        IpRules = new Dictionary<string, RateLimits>
-            //        { 
-            //            { "::1/10", new RateLimits { PerSecond = 2 } },
-            //            { "192.168.2.1", new RateLimits { PerMinute = 30, PerHour = 30*60, PerDay = 30*60*24 } }
-            //        },
-            //        //white list the "::1" IP to disable throttling on localhost for Win8
-            //        IpWhitelist = new List<string> { "127.0.0.1", "192.168.0.0/24" },
 
-            //        //scope to clients (if IP throttling is applied then the scope becomes a combination of IP and client key)
-            //        ClientThrottling = true,
-            //        ClientRules = new Dictionary<string, RateLimits>
-            //        { 
-            //            { "api-client-key-1", new RateLimits { PerMinute = 60, PerHour = 600 } },
-            //            { "api-client-key-9", new RateLimits { PerDay = 5000 } }
-            //        },
-            //        //white list API keys that don’t require throttling
-            //        ClientWhitelist = new List<string> { "admin-key" },
-
-            //        //Endpoint rate limits will be loaded from EnableThrottling attribute
-            //        EndpointThrottling = true
-            //    },
-            //    policyRepository: new PolicyCacheRepository(),
-            //    repository: new CacheRepository(),
-            //    logger: new TracingThrottleLogger(traceWriter)));
-
-            //Web API throttling filter load policy from web.config
-            //config.Filters.Add(new ThrottlingFilter(           
-            //    policy: ThrottlePolicy.FromStore(new PolicyConfigurationProvider()),
-            //    policyRepository: new PolicyCacheRepository(),
-            //    repository: new CacheRepository(),
-            //    logger: new TracingThrottleLogger(traceWriter)));
+        }
+        /// <summary>
+        /// Gets the throttle policy.
+        /// </summary>
+        /// <param name="policyRepository">The policy repository.</param>
+        /// <returns>ThrottlePolicy.</returns>
+        private static ThrottlePolicy GetThrottlePolicy(IPolicyRepository policyRepository)
+        {
+            var policy = policyRepository?.FirstOrDefault(ThrottleManager.GetPolicyKey());
+            if (policy == null)
+            {
+                policy = new ThrottlePolicy
+                {
+                    IpThrottling = true,     //是否IP地址限流
+                    ClientThrottling = true, //是否客户端Key限流
+                    EndpointThrottling = true,  //是否启用Url限流
+                    StackBlockedRequests = false, //获取或设置一个值，表示所有的请求，包括被拒绝的请求，是否应该按照这个顺序堆叠：日、小时、分钟、秒。
+                };
+                //policy=ThrottlePolicy.FromStore(new PolicyConfigurationProvider());
+            }
+            return policy;
         }
 
+        /// <summary>
+        /// Quotas the content of the exceeded.
+        /// </summary>
+        /// <param name="rateLimit">The rate limit.</param>
+        /// <param name="period">The period.</param>
+        /// <returns>System.Object.</returns>
+        private static object QuotaExceededContent(long rateLimit, RateLimitPeriod period)
+        {
+            Dictionary<RateLimitPeriod, string> dicPeriods = new Dictionary<RateLimitPeriod, string>() {
+                { RateLimitPeriod.Second,$"每秒" }, { RateLimitPeriod.Minute,$"每分" }, { RateLimitPeriod.Hour,$"每时" }, { RateLimitPeriod.Day,$"每天" }
+            };
+            string periodText = dicPeriods.GetValue(period, () => { return "当前时间内"; });
+            return new { code = "429", msg = $"你调用接口太频繁，{periodText}只允许调用{rateLimit}次，请稍后再试。" };
+        }
         /// <summary>
         /// Gets the connection multiplexer.
         /// </summary>
