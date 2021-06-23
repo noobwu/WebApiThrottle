@@ -74,7 +74,19 @@ namespace WebApiThrottle
         /// <exception cref="NotImplementedException"></exception>
         public ThrottleCounter? FirstOrDefault(string id)
         {
-            return Get<ThrottleCounter>(GetKey(id));
+            var key = GetKey(id);
+            var counter = GetCounter(key);
+            if (counter == null)
+            {
+                return null;
+            }
+            DateTime timestamp = DateTime.MaxValue;
+            var expireTime = GetKeyExpireTime(key);
+            if (expireTime.HasValue)
+            {
+                timestamp = expireTime.Value;
+            }
+            return new ThrottleCounter() { TotalRequests=counter.Value,Timestamp= timestamp };
         }
 
         /// <summary>
@@ -96,7 +108,15 @@ namespace WebApiThrottle
         /// <exception cref="NotImplementedException"></exception>
         public void Save(string id, ThrottleCounter throttleCounter, TimeSpan expirationTime)
         {
-            GetDatabase().ScriptEvaluate(_atomicIncrement, new { key = GetKey(id), timeout = expirationTime.TotalSeconds, delta = throttleCounter.TotalRequests });
+            var now = DateTime.UtcNow;
+            var numberOfIntervals = now.Ticks / expirationTime.Ticks;
+            var intervalStart = new DateTime(numberOfIntervals * expirationTime.Ticks, DateTimeKind.Utc);
+            var count = GetDatabase().ScriptEvaluate(_atomicIncrement, new { key = GetKey(id), timeout = expirationTime.TotalSeconds, delta = 1 });
+            var counter= new ThrottleCounter
+            {
+                TotalRequests =(long)count,
+                Timestamp = intervalStart
+            };
         }
 
         /// <summary>

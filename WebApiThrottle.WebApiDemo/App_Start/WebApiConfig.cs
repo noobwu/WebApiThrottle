@@ -22,11 +22,19 @@ namespace WebApiThrottle.WebApiDemo
         {
             // Web API routes
             config.MapHttpAttributeRoutes();
-
+            
+            /*
             config.Routes.MapHttpRoute(
                 name: "DefaultApi",
                 routeTemplate: "api/{controller}/{id}",
                 defaults: new { id = RouteParameter.Optional }
+            );
+            */
+
+            config.Routes.MapHttpRoute(
+                 name: "DefaultApi",
+                 routeTemplate: "api/{controller}/{action}/{id}",
+                 defaults: new { id = RouteParameter.Optional }
             );
 
             // 将 SerializerSettings 重置为默认值 IgnoreSerializableAttribute = true
@@ -35,7 +43,7 @@ namespace WebApiThrottle.WebApiDemo
                 MissingMemberHandling = MissingMemberHandling.Ignore,
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                 Converters = { new IsoDateTimeConverter { DateTimeFormat = "yyyy-MM-dd HH:mm:ss" } }
-            }; ;
+            };
             UsingThrottle(config);
 
         }
@@ -60,7 +68,7 @@ namespace WebApiThrottle.WebApiDemo
             Singleton<IPolicyRepository>.Instance = policyRepository;
             Singleton<ThrottlePolicy>.Instance = GetThrottlePolicy(policyRepository);
 
-           
+
             config.Services.Replace(typeof(ITraceWriter), traceWriter);
             config.EnableSystemDiagnosticsTracing();
             IThrottleLogger logger = new TracingThrottleLogger(traceWriter);
@@ -135,7 +143,7 @@ namespace WebApiThrottle.WebApiDemo
         /// <param name="caller">The caller.</param>
         /// <returns>ConnectionMultiplexer.</returns>
         /// <exception cref="TimeoutException">Connect timeout</exception>
-        public static  ConnectionMultiplexer GetConnectionMultiplexer(
+        public static ConnectionMultiplexer GetConnectionMultiplexer(
              string configuration = null, int? defaultDatabase = null,
         string clientName = null, int? syncTimeout = null, bool? allowAdmin = null, int? keepAlive = null,
         int? connectTimeout = null, string password = null, string tieBreaker = null,

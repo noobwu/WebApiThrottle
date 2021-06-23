@@ -75,6 +75,44 @@ namespace WebApiThrottle
                 return default(T);
             }
         }
+        /// <summary>
+        /// Gets the counter.
+        /// </summary>
+        /// <typeparam name="">The type of the .</typeparam>
+        /// <param name="key">The key.</param>
+        /// <returns>T.</returns>
+        /// <exception cref="ArgumentNullException">key</exception>
+        public long? GetCounter(string key)
+        {
+            if (key == null) throw new ArgumentNullException("key");
+            var database = GetDatabase();
+            var redisValue = database.StringGet(key);
+            long counter = 0;
+            if (long.TryParse(redisValue, out counter))
+            {
+                return counter;
+            }
+            return null;
+        }
+        /// <summary>
+        /// Gets the key expire time.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <returns>System.Nullable&lt;DateTime&gt;.</returns>
+        /// <exception cref="ArgumentNullException">key</exception>
+        public DateTime? GetKeyExpireTime(string key)
+        {
+            if (key == null) throw new ArgumentNullException("key");
+            var database = GetDatabase();
+            var tsExpire = database.KeyTimeToLive(key);
+            if (tsExpire == null)
+            {
+                return null;
+            }
+            var now = DateTime.UtcNow;
+            var numberOfIntervals = now.Ticks / tsExpire.Value.Ticks;
+            return new DateTime(numberOfIntervals * tsExpire.Value.Ticks, DateTimeKind.Utc);
+        }
 
         /// <summary>
         /// Gets the database.
