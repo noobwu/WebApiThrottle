@@ -38,7 +38,7 @@ namespace WebApiThrottle
         /// Initializes a new instance of the <see cref="RedisRepository"/> class.
         /// </summary>
         /// <param name="connectionMultiplexer">The connection multiplexer.</param>
-        public RedisRepository(IConnectionMultiplexer connectionMultiplexer):base(connectionMultiplexer)
+        public RedisRepository(IConnectionMultiplexer connectionMultiplexer) : base(connectionMultiplexer)
         {
         }
         /// <summary>
@@ -86,7 +86,8 @@ namespace WebApiThrottle
             {
                 timestamp = expireTime.Value;
             }
-            return new ThrottleCounter() { TotalRequests=counter.Value,Timestamp= timestamp };
+            return new ThrottleCounter() { TotalRequests = counter.Value, Timestamp = timestamp };
+            //return Get<ThrottleCounter?>(GetKey(id));
         }
 
         /// <summary>
@@ -108,15 +109,12 @@ namespace WebApiThrottle
         /// <exception cref="NotImplementedException"></exception>
         public void Save(string id, ThrottleCounter throttleCounter, TimeSpan expirationTime)
         {
-            var now = DateTime.UtcNow;
-            var numberOfIntervals = now.Ticks / expirationTime.Ticks;
-            var intervalStart = new DateTime(numberOfIntervals * expirationTime.Ticks, DateTimeKind.Utc);
+            //var now = DateTime.UtcNow;
+            //var numberOfIntervals = now.Ticks / expirationTime.Ticks;
+            //var intervalStart = new DateTime(numberOfIntervals * expirationTime.Ticks, DateTimeKind.Utc);
             var count = GetDatabase().ScriptEvaluate(_atomicIncrement, new { key = GetKey(id), timeout = expirationTime.TotalSeconds, delta = 1 });
-            var counter= new ThrottleCounter
-            {
-                TotalRequests =(long)count,
-                Timestamp = intervalStart
-            };
+            //GetDatabase().StringSet(GetKey(id), throttleCounter.TotalRequests, expirationTime);
+            //StringSet(GetKey(id), throttleCounter, expirationTime);
         }
 
         /// <summary>
@@ -127,6 +125,22 @@ namespace WebApiThrottle
         protected override string GetKey(string id)
         {
             return $"WebApiThrottle:Counter:{id}";
+        }
+
+        /// <summary>
+        /// 设置缓存项(服务器上key存在就替换,不存在就添加)
+        /// </summary>
+        /// <param name="key">缓存键值</param>
+        /// <param name="value">缓存值</param>
+        /// <param name="expiry">缓存过期时间(单位:分钟)；如果为空表示不设过期时间</param>
+        /// <returns>是否设置成功</returns>
+        public bool StringSet(string key, object value, TimeSpan? expiry)
+        {
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            if (value == null) throw new ArgumentNullException(nameof(value));
+            var database = GetDatabase();
+            string valueAsString = JsonConvert.SerializeObject(value);
+            return database.StringSet(key, valueAsString, expiry, When.Always);
         }
     }
 }
