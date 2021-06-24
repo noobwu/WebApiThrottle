@@ -127,20 +127,6 @@ namespace WebApiThrottle
             return $"WebApiThrottle:Counter:{id}";
         }
 
-        /// <summary>
-        /// 设置缓存项(服务器上key存在就替换,不存在就添加)
-        /// </summary>
-        /// <param name="key">缓存键值</param>
-        /// <param name="value">缓存值</param>
-        /// <param name="expiry">缓存过期时间(单位:分钟)；如果为空表示不设过期时间</param>
-        /// <returns>是否设置成功</returns>
-        public bool StringSet(string key, object value, TimeSpan? expiry)
-        {
-            if (key == null) throw new ArgumentNullException(nameof(key));
-            if (value == null) throw new ArgumentNullException(nameof(value));
-            var database = GetDatabase();
-            string valueAsString = JsonConvert.SerializeObject(value);
-            return database.StringSet(key, valueAsString, expiry, When.Always);
-        }
+        
     }
 }
