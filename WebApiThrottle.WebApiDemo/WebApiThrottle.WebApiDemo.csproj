@@ -109,6 +109,10 @@
     <Compile Include="Models\ThrottlePolicyModel.cs" />
     <Compile Include="Net\CustomIpAddressParser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WebApiThrottles\CustomThrottlingHandler.cs" />
+    <Compile Include="WebApiThrottles\PolicyRedisRepository.cs" />
+    <Compile Include="WebApiThrottles\RedisRepository.cs" />
+    <Compile Include="WebApiThrottles\RedisRespositoryBase.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

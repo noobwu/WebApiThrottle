@@ -89,9 +89,6 @@
     <Compile Include="Models\ThrottleCounter.cs" />
     <Compile Include="Logging\ThrottleLogEntry.cs" />
     <Compile Include="Attributes\EnableThrottlingAttribute.cs" />
-    <Compile Include="Repositories\PolicyRedisRepository.cs" />
-    <Compile Include="Repositories\RedisRepository.cs" />
-    <Compile Include="Repositories\RedisRespositoryBase.cs" />
     <Compile Include="ThrottlingMiddleware.cs" />
     <Compile Include="ThrottleManager.cs" />
     <Compile Include="ThrottlePolicy.cs" />

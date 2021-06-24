@@ -4,7 +4,6 @@ using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -12,8 +11,7 @@ using System.Web.Http;
 using System.Web.Http.Tracing;
 using WebApiThrottle.WebApiDemo.Extensions;
 using WebApiThrottle.WebApiDemo.Infrastructure;
-using WebApiThrottle.WebApiDemo.Net;
-
+using System.Configuration;
 namespace WebApiThrottle.WebApiDemo
 {
     public static class WebApiConfig
@@ -62,7 +60,24 @@ namespace WebApiThrottle.WebApiDemo
             config.EnableSystemDiagnosticsTracing();
 
             var muxer = GetConnectionMultiplexer("127.0.0.1:6379,password=,connectRetry=3,connectTimeout=15000,syncTimeout=15000,defaultDatabase=0,abortConnect=false");
-            Singleton<IThrottleRepository>.Instance = new RedisRepository(muxer);
+         
+
+            IThrottleRepository repository = null;
+
+            var repositoryType = ConfigurationManager.AppSettings["ThrottleRepositoryType"];
+            switch (repositoryType)
+            {
+                case "Redis":
+                    repository = new RedisRepository(muxer);
+                    break;
+                case "MemoryCache":
+                    repository = new MemoryCacheRepository();
+                    break;
+                default:
+                    repository = new CacheRepository();
+                    break;
+            }
+            Singleton<IThrottleRepository>.Instance = repository;
 
             var policyRepository = new PolicyRedisRepository(muxer);
             Singleton<IPolicyRepository>.Instance = policyRepository;
@@ -74,7 +89,7 @@ namespace WebApiThrottle.WebApiDemo
             IThrottleLogger logger = new TracingThrottleLogger(traceWriter);
 
             //Web API throttling handler load policy from web.config
-            config.MessageHandlers.Add(new ThrottlingHandler(
+            config.MessageHandlers.Add(new CustomThrottlingHandler(
                 policy: Singleton<ThrottlePolicy>.Instance,
                 policyRepository: Singleton<IPolicyRepository>.Instance,
                 repository: Singleton<IThrottleRepository>.Instance,
